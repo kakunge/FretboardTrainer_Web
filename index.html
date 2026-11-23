@@ -54,6 +54,11 @@
         <h3>5. 계이름 ↔ 알파벳</h3>
         <p>C-D-E-F-G-A-B와 도-레-미-파-솔-라-시 1초 전환</p>
       </div>
+      <button type="button" class="mode-card input-circle-mode" onclick="openMode('inputCircle')">
+        <span class="mode-icon" style="background: var(--yellow);">6</span>
+        <strong>6. 기타 입력 4도권</strong>
+        <span>오디오 인터페이스로 C부터 4도권 연습</span>
+      </button>
     </div>
   </main>
 
@@ -93,6 +98,48 @@
     </div>
   </section>
 
+  <section id="input-circle-view" hidden>
+    <div class="input-circle-controls">
+      <label>입력 장치
+        <select id="input-circle-device" class="btn"><option value="">시스템 기본 입력</option></select>
+      </label>
+      <label>입력 채널
+        <select id="input-circle-channel" class="btn">
+          <option value="0">1</option>
+          <option value="1">2</option>
+        </select>
+      </label>
+      <label>피킹 감도
+        <select id="input-circle-sensitivity" class="btn">
+          <option value="0.009">높음</option>
+          <option value="0.018" selected>보통</option>
+          <option value="0.036">낮음</option>
+        </select>
+      </label>
+      <button id="input-circle-toggle" class="btn btn-primary" type="button">입력 시작</button>
+      <button id="input-circle-reset" class="btn" type="button">C부터 다시</button>
+      <label class="input-circle-display">
+        <input id="input-circle-show-detected" type="checkbox" checked />
+        감지한 음 표시
+      </label>
+      <label class="input-circle-display">
+        <input id="input-circle-show-landmarks" type="checkbox" aria-controls="input-circle-landmarks" />
+        자연음 랜드마크
+      </label>
+    </div>
+    <div class="solfege-card">
+      <div id="input-circle-progress" class="sub-label"></div>
+      <div id="input-circle-target" class="big-note"></div>
+      <div id="input-circle-detected">감지한 음 · —</div>
+      <div id="input-circle-feedback" class="quiz-feedback" role="status"></div>
+    </div>
+    <div id="input-circle-landmarks" hidden>
+      <svg id="input-circle-landmarks-svg" viewBox="0 0 760 250" role="img" aria-label="개방현부터 12프렛까지의 자연음 지판"></svg>
+    </div>
+    <p class="input-circle-help">아무 줄에서나 목표음을 한 음씩 피킹하세요. 누르는 소리에도 넘어가면 피킹 감도를 낮추세요.</p>
+  </section>
+
 <script src="./app.js"></script>
+<script src="./input-circle.js"></script>
 </body>
 </html>

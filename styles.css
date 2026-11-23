@@ -445,3 +445,68 @@
       cursor: pointer;
       transition: transform 0.12s ease-out;
     }
+
+.input-circle-mode {
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+.input-circle-mode strong { font-size: 15px; }
+.input-circle-mode > span:last-child { color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+#input-circle-view {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.input-circle-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.input-circle-controls label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.input-circle-controls .input-circle-display {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+}
+
+.input-circle-display input { accent-color: var(--orange); }
+
+.input-circle-controls select {
+  max-width: min(240px, 80vw);
+  color-scheme: dark;
+  background: var(--card);
+}
+
+#input-circle-view .big-note { font-size: clamp(36px, 9vw, 64px); }
+#input-circle-detected, .input-circle-help { font-size: 13px; color: var(--muted); }
+
+#input-circle-landmarks {
+  margin-top: 12px;
+  padding: 10px;
+  overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+#input-circle-landmarks-svg {
+  display: block;
+  width: 100%;
+  min-width: 560px;
+}

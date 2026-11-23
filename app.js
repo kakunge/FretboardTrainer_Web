@@ -58,8 +58,7 @@ class GuitarAudioEngine {
 
   pluckString(stringIndex, fret) {
     // 0: 6번줄(E2=40) ~ 5: 1번줄(E4=64)
-    const openMidi = [40, 45, 50, 55, 59, 64];
-    const midi = openMidi[stringIndex] + fret;
+    const midi = OPEN_STRING_MIDI[stringIndex] + fret;
     const freq = 440.0 * Math.pow(2.0, (midi - 69) / 12.0);
     this.pluckFrequency(freq);
   }
@@ -97,7 +96,8 @@ function toggleSound() {
 const NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 const NATURAL_NOTES = new Set(['C', 'D', 'E', 'F', 'G', 'A', 'B']);
 const CIRCLE_OF_FOURTHS = ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'B', 'E', 'A', 'D', 'G'];
-const OPEN_STRINGS = [4, 9, 2, 7, 11, 4]; // E, A, D, G, B, E
+const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]; // E, A, D, G, B, E
+const OPEN_STRINGS = OPEN_STRING_MIDI.map(midi => midi % 12);
 const INLAY_FRETS = [3, 5, 7, 9, 12];
 
 const SOLFEGE_ITEMS = [
@@ -161,7 +161,9 @@ function getPrimaryVerticalPath(targetNote) {
 // 3. 화면 전환 라우팅
 // ==========================================
 function goHome() {
+  if (state.mode === 'inputCircle') stopCircleInput();
   state.mode = null;
+  document.getElementById('input-circle-view').hidden = true;
   document.getElementById('home-view').style.display = 'block';
   document.getElementById('training-view').style.display = 'none';
   document.getElementById('solfege-view').style.display = 'none';
@@ -170,7 +172,9 @@ function goHome() {
 }
 
 function openMode(mode) {
+  if (state.mode === 'inputCircle') stopCircleInput();
   state.mode = mode;
+  document.getElementById('input-circle-view').hidden = mode !== 'inputCircle';
   document.getElementById('home-view').style.display = 'none';
   document.getElementById('btn-back').style.display = 'inline-block';
 
@@ -179,11 +183,17 @@ function openMode(mode) {
     natural: '2. 자연음 랜드마크',
     inlay: '3. 인레이 세로줄 기준',
     quiz: '4. 지판 인출 퀴즈',
-    solfege: '5. 계이름 ↔ 알파벳'
+    solfege: '5. 계이름 ↔ 알파벳',
+    inputCircle: '6. 기타 입력 4도권'
   };
   document.getElementById('header-title').textContent = titles[mode];
 
-  if (mode === 'solfege') {
+  if (mode === 'inputCircle') {
+    document.getElementById('training-view').style.display = 'none';
+    document.getElementById('solfege-view').style.display = 'none';
+    resetInputCircle();
+    updateCircleLandmarks();
+  } else if (mode === 'solfege') {
     document.getElementById('training-view').style.display = 'none';
     document.getElementById('solfege-view').style.display = 'flex';
     generateSolfegeQuiz();
@@ -198,8 +208,8 @@ function openMode(mode) {
 // ==========================================
 // 4. SVG 기타 지판 렌더링 (원형 도트 인레이)
 // ==========================================
-function renderFretboard() {
-  const svg = document.getElementById('fretboard-svg');
+function renderFretboard(svg = document.getElementById('fretboard-svg'), mode = state.mode) {
+  const gradientId = `${svg.id}-wood`;
   const W = 760, H = 250;
   const leftMargin = 34, topMargin = 24, nutW = 12;
   const boardW = W - leftMargin - nutW;
@@ -216,13 +226,13 @@ function renderFretboard() {
 
   let html = `
     <defs>
-      <linearGradient id="woodGrad" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="#3d261c"/>
         <stop offset="100%" stop-color="#2b1914"/>
       </linearGradient>
     </defs>
     <!-- 로즈우드 지판 -->
-    <rect x="${leftMargin}" y="${topMargin}" width="${boardW + nutW}" height="${boardH}" rx="10" fill="url(#woodGrad)" />
+    <rect x="${leftMargin}" y="${topMargin}" width="${boardW + nutW}" height="${boardH}" rx="10" fill="url(#${gradientId})" />
     <!-- 0프렛 너트 -->
     <rect x="${leftMargin}" y="${topMargin}" width="${nutW}" height="${boardH}" fill="#ede6d1" />
   `;
@@ -262,7 +272,7 @@ function renderFretboard() {
   const targetNote = CIRCLE_OF_FOURTHS[state.circleIdx];
   const primaryPath = getPrimaryVerticalPath(targetNote);
 
-  if (state.mode === 'octave') {
+  if (mode === 'octave') {
     const pts = primaryPath.map(p => {
       const c = pt(p.s, p.f);
       return `${c.x},${c.y}`;
@@ -270,7 +280,7 @@ function renderFretboard() {
     html += `<polyline points="${pts}" fill="none" stroke="#f97316" stroke-width="3.5" stroke-dasharray="6,4" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />`;
   }
 
-  if (state.mode === 'inlay') {
+  if (mode === 'inlay') {
     const colX = leftMargin + nutW + fretW * (state.selectedInlay - 1) + 4;
     html += `<rect x="${colX}" y="${topMargin + 4}" width="${fretW - 8}" height="${boardH - 8}" rx="8" fill="rgba(59,130,246,0.18)" stroke="#3b82f6" stroke-width="2.5" />`;
   }
@@ -281,7 +291,7 @@ function renderFretboard() {
       const c = pt(s, f);
       const n = noteAt(s, f);
 
-      if (state.mode === 'octave') {
+      if (mode === 'octave') {
         const isPrimary = primaryPath.some(p => p.s === s && p.f === f);
         const isMatch = (n === targetNote);
         if (isPrimary || (state.showAllOctaves && isMatch)) {
@@ -294,19 +304,22 @@ function renderFretboard() {
         } else {
           html += `<circle class="note-node" cx="${c.x}" cy="${c.y}" r="11" fill="rgba(255,255,255,0.06)" onclick="onTapFret(${s}, ${f})" />`;
         }
-      } else if (state.mode === 'natural') {
+      } else if (mode === 'natural') {
+        const interaction = svg.id === 'fretboard-svg'
+          ? ` class="note-node" onclick="onTapFret(${s}, ${f})"`
+          : '';
         if (NATURAL_NOTES.has(n)) {
           const isHalf = state.highlightHalfSteps && (n === 'E' || n === 'B');
           const fill = isHalf ? '#34d399' : '#f8fafc';
           html += `
-            <g class="note-node" onclick="onTapFret(${s}, ${f})">
+            <g${interaction}>
               <circle cx="${c.x}" cy="${c.y}" r="12.5" fill="${fill}" />
               <text x="${c.x}" y="${c.y + 4}" text-anchor="middle" font-size="11" font-weight="800" fill="#111827">${n}</text>
             </g>`;
-        } else {
-          html += `<circle class="note-node" cx="${c.x}" cy="${c.y}" r="11" fill="transparent" onclick="onTapFret(${s}, ${f})" />`;
+        } else if (interaction) {
+          html += `<circle${interaction} cx="${c.x}" cy="${c.y}" r="11" fill="transparent" />`;
         }
-      } else if (state.mode === 'inlay') {
+      } else if (mode === 'inlay') {
         if (f === state.selectedInlay) {
           html += `
             <g class="note-node" onclick="onTapFret(${s}, ${f})">
@@ -316,7 +329,7 @@ function renderFretboard() {
         } else {
           html += `<circle class="note-node" cx="${c.x}" cy="${c.y}" r="11" fill="rgba(255,255,255,0.05)" onclick="onTapFret(${s}, ${f})" />`;
         }
-      } else if (state.mode === 'quiz') {
+      } else if (mode === 'quiz') {
         const isTarget = (state.quizTarget.s === s && state.quizTarget.f === f);
         if (state.quizType === 'identifyNote' && isTarget) {
           const fill = state.quizResult === true ? '#22c55e' : '#eab308';
